@@ -6,6 +6,7 @@ import { ShiftManager } from "./components/ShiftManager";
 import { AccountManager } from "./components/AccountManager";
 import { UserSettings } from "./components/UserSettings";
 import { NoticeManager } from "./components/NoticeManager";
+import { AttendanceManager } from "./components/AttendanceManager";
 
 export type UserRole = "admin" | "instructor" | "student" | "parent";
 
@@ -16,6 +17,8 @@ export interface User {
   role: UserRole;
   name: string;
   childrenIds?: string[]; // For parents
+  grade?: string; // For students - 学年
+  classroom?: string; // For students - 教室
 }
 
 export interface Material {
@@ -48,7 +51,7 @@ export interface Notice {
   createdBy: string;
 }
 
-export type Screen = "dashboard" | "materials" | "shifts" | "accounts" | "settings" | "notices";
+export type Screen = "dashboard" | "materials" | "shifts" | "accounts" | "settings" | "notices" | "attendance";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -86,7 +89,9 @@ export default function App() {
           username: "student001",
           password: "student123",
           role: "student",
-          name: "生徒 一郎"
+          name: "生徒 一郎",
+          grade: "1年",
+          classroom: "A教室"
         },
         {
           id: "4",
@@ -283,6 +288,13 @@ export default function App() {
           currentUser={currentUser}
           notices={notices}
           onUpdateNotices={updateNotices}
+          onNavigate={setCurrentScreen}
+        />
+      )}
+      {currentScreen === "attendance" && (
+        <AttendanceManager
+          currentUser={currentUser}
+          users={users}
           onNavigate={setCurrentScreen}
         />
       )}

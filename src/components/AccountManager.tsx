@@ -32,12 +32,20 @@ export function AccountManager({
     password: "",
     name: "",
     role: "student" as UserRole,
-    childrenIds: [] as string[]
+    childrenIds: [] as string[],
+    grade: "",
+    classroom: ""
   });
   const [bulkData, setBulkData] = useState("");
   const [error, setError] = useState("");
 
   const canManage = currentUser.role === "admin";
+
+  const handleNavigateBack = () => {
+    setIsDialogOpen(false);
+    setIsBulkDialogOpen(false);
+    onNavigate("dashboard");
+  };
 
   if (!canManage) {
     return (
@@ -48,7 +56,7 @@ export function AccountManager({
             <CardDescription>この機能は職員のみ利用できます</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => onNavigate("dashboard")}>
+            <Button onClick={handleNavigateBack}>
               ダッシュボードに戻る
             </Button>
           </CardContent>
@@ -86,7 +94,9 @@ export function AccountManager({
         password: user.password,
         name: user.name,
         role: user.role,
-        childrenIds: user.childrenIds || []
+        childrenIds: user.childrenIds || [],
+        grade: user.grade || "",
+        classroom: user.classroom || ""
       });
     } else {
       setEditingUser(null);
@@ -95,7 +105,9 @@ export function AccountManager({
         password: "",
         name: "",
         role: "student",
-        childrenIds: []
+        childrenIds: [],
+        grade: "",
+        classroom: ""
       });
     }
     setIsDialogOpen(true);
@@ -207,9 +219,9 @@ export function AccountManager({
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => onNavigate("dashboard")}>
+              <Button variant="ghost" size="sm" onClick={handleNavigateBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 戻る
               </Button>
@@ -218,7 +230,7 @@ export function AccountManager({
                 <p className="text-sm text-gray-600">ユーザーアカウントの作成・管理</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" onClick={() => { setBulkData(""); setError(""); }}>
@@ -337,18 +349,42 @@ export function AccountManager({
                       </SelectContent>
                     </Select>
                   </div>
+                  {formData.role === "student" && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="grade">学年</Label>
+                          <Input
+                            id="grade"
+                            value={formData.grade}
+                            onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                            placeholder="例: 1年"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="classroom">教室</Label>
+                          <Input
+                            id="classroom"
+                            value={formData.classroom}
+                            onChange={(e) => setFormData({ ...formData, classroom: e.target.value })}
+                            placeholder="例: A教室"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                   {formData.role === "parent" && (
                     <div className="space-y-2">
                       <Label htmlFor="children">お子様（生徒）</Label>
                       <Select
-                        value={formData.childrenIds[0] || ""}
-                        onValueChange={(value) => setFormData({ ...formData, childrenIds: value ? [value] : [] })}
+                        value={formData.childrenIds[0] || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, childrenIds: value === "none" ? [] : [value] })}
                       >
                         <SelectTrigger id="children">
                           <SelectValue placeholder="お子様を選択" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">選択なし</SelectItem>
+                          <SelectItem value="none">選択なし</SelectItem>
                           {students.map((student) => (
                             <SelectItem key={student.id} value={student.id}>
                               {student.name}
@@ -416,17 +452,22 @@ export function AccountManager({
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-4 flex-1">
-                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <UsersIcon className="w-5 h-5 text-indigo-600" />
+                        <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+                          <UsersIcon className="w-7 h-7 text-indigo-600" />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm">{user.name}</p>
                             <Badge className={getRoleBadgeColor(user.role)}>
                               {getRoleLabel(user.role)}
                             </Badge>
                           </div>
                           <p className="text-xs text-gray-600">ID: {user.username}</p>
+                          {user.grade && user.classroom && (
+                            <p className="text-xs text-gray-600">
+                              {user.grade} / {user.classroom}
+                            </p>
+                          )}
                           {user.childrenIds && user.childrenIds.length > 0 && (
                             <p className="text-xs text-gray-600">
                               お子様: {users.find(u => u.id === user.childrenIds![0])?.name}

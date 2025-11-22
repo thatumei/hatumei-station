@@ -10,7 +10,8 @@ import {
   Lightbulb,
   Clock,
   Bell,
-  UserCircle
+  UserCircle,
+  QrCode
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -53,6 +54,7 @@ export function Dashboard({
   const canAccessMaterials = true;
   const canAccessShifts = ["admin", "instructor"].includes(currentUser.role);
   const canAccessAccounts = currentUser.role === "admin";
+  const canAccessAttendance = ["admin", "instructor"].includes(currentUser.role);
 
   const userMaterials = materials.filter(m => 
     m.targetAudience.includes(currentUser.role)
@@ -205,6 +207,20 @@ export function Dashboard({
                 <CardTitle>アカウント管理</CardTitle>
                 <CardDescription>
                   ユーザーアカウントの作成・管理
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+
+          {canAccessAttendance && (
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("attendance")}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                  <QrCode className="w-6 h-6 text-orange-600" />
+                </div>
+                <CardTitle>出席管理</CardTitle>
+                <CardDescription>
+                  QRコードで出席を記録
                 </CardDescription>
               </CardHeader>
             </Card>
