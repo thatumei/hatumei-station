@@ -11,7 +11,7 @@ interface UserSettingsProps {
   currentUser: User;
   users: User[];
   onUpdateUsers: (users: User[]) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 export function UserSettings({ 

@@ -13,7 +13,7 @@ interface ShiftManagerProps {
   shifts: Shift[];
   users: User[];
   onUpdateShifts: (shifts: Shift[]) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 export function ShiftManager({ 
@@ -315,7 +315,8 @@ export function ShiftManager({
                   {dayShifts.map((shift) => (
                     <div
                       key={shift.id}
-                      className="p-2 bg-blue-50 rounded text-xs space-y-1 relative group"
+                      className="p-2 bg-blue-50 rounded text-xs space-y-1 relative group cursor-pointer hover:bg-blue-100 transition-colors"
+                      onClick={() => onNavigate("shift-detail", shift.id)}
                     >
                       <p className="truncate">{shift.activity}</p>
                       <p className="text-gray-600 truncate">{shift.instructorName}</p>
@@ -323,7 +324,7 @@ export function ShiftManager({
                         {shift.startTime}-{shift.endTime}
                       </p>
                       {canEdit && (
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="sm"

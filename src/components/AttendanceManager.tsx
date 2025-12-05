@@ -37,7 +37,7 @@ import jsQR from "jsqr";
 interface AttendanceManagerProps {
   currentUser: User;
   users: User[];
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 interface AttendanceRecord {

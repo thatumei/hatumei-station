@@ -8,14 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
-import { ArrowLeft, Plus, Users as UsersIcon, Pencil, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Users as UsersIcon, Pencil, Trash2, Upload, Table } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
 
 interface AccountManagerProps {
   currentUser: User;
   users: User[];
   onUpdateUsers: (users: User[]) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 export function AccountManager({ 
@@ -38,6 +38,7 @@ export function AccountManager({
   });
   const [bulkData, setBulkData] = useState("");
   const [error, setError] = useState("");
+  const [isTableMode, setIsTableMode] = useState(false);
 
   const canManage = currentUser.role === "admin";
 
@@ -230,7 +231,15 @@ export function AccountManager({
                 <p className="text-sm text-gray-600">ユーザーアカウントの作成・管理</p>
               </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsTableMode(!isTableMode)}
+              >
+                <Table className="w-4 h-4 mr-2" />
+                {isTableMode ? "カード表示" : "表形式"}
+              </Button>
+              
               <Dialog open={isBulkDialogOpen} onOpenChange={setIsBulkDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" onClick={() => { setBulkData(""); setError(""); }}>
@@ -421,8 +430,61 @@ export function AccountManager({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Table Mode */}
+        {isTableMode ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>ユーザー一覧（表形式）</CardTitle>
+              <CardDescription>
+                全ユーザーを一覧表示します。編集はカード表示モードで行ってください。
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto mb-4">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ユーザーID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">氏名</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">役割</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">学年</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">教室</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">子供のID</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.id}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.username}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={getRoleBadgeColor(user.role)}>
+                            {getRoleLabel(user.role)}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.grade || "-"}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.classroom || "-"}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {user.childrenIds?.join(", ") || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsTableMode(false)}>
+                  カード表示に戻る
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {Object.entries(usersByRole).map(([role, roleUsers]) => (
             <Card key={role}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -504,6 +566,8 @@ export function AccountManager({
             </Card>
           ))}
         </div>
+      </>
+        )}
       </main>
     </div>
   );

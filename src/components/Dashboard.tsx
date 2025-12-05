@@ -11,20 +11,25 @@ import {
   Clock,
   Bell,
   UserCircle,
-  QrCode
+  QrCode,
+  Music,
+  Link as LinkIcon,
+  FileText
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { useState } from "react";
+import { BGMPlayer } from "./BGMPlayer";
 
 interface DashboardProps {
   currentUser: User;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
   onLogout: () => void;
   materials: Material[];
   shifts: Shift[];
@@ -41,6 +46,9 @@ export function Dashboard({
   users,
   notices
 }: DashboardProps) {
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const [isBGMOpen, setIsBGMOpen] = useState(false);
+
   const getRoleLabel = (role: UserRole) => {
     const labels = {
       admin: "職員",
@@ -55,6 +63,7 @@ export function Dashboard({
   const canAccessShifts = ["admin", "instructor"].includes(currentUser.role);
   const canAccessAccounts = currentUser.role === "admin";
   const canAccessAttendance = ["admin", "instructor"].includes(currentUser.role);
+  const canAccessScheduleList = ["student", "parent"].includes(currentUser.role);
 
   const userMaterials = materials.filter(m => 
     m.targetAudience.includes(currentUser.role)
@@ -69,6 +78,8 @@ export function Dashboard({
     .filter(n => n.targetAudience.includes(currentUser.role))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
+
+  const [isBGMPlaying, setIsBGMPlaying] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -86,30 +97,78 @@ export function Dashboard({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                    <UserCircle className="w-6 h-6" />
+              <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-gray-100 rounded-full p-2">
+                    <UserCircle className="w-9 h-9 text-gray-700" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div>
-                      <p className="text-sm">{currentUser.name}</p>
-                      <p className="text-xs text-gray-600">{getRoleLabel(currentUser.role)}</p>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>アカウント情報</DialogTitle>
+                    <DialogDescription>
+                      ログイン中のアカウント情報
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <UserCircle className="w-10 h-10 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">{currentUser.name}</p>
+                        <p className="text-sm text-gray-600">{getRoleLabel(currentUser.role)}</p>
+                        <p className="text-xs text-gray-500">ID: {currentUser.username}</p>
+                      </div>
                     </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onNavigate("settings")}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    設定
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onLogout}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    ログアウト
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {currentUser.role === "student" && (
+                      <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm">
+                          <span className="text-gray-600">学年:</span> {currentUser.grade}
+                        </p>
+                        <p className="text-sm">
+                          <span className="text-gray-600">教室:</span> {currentUser.classroom}
+                        </p>
+                      </div>
+                    )}
+                    {currentUser.role === "parent" && currentUser.childrenIds && (
+                      <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600">お子様:</p>
+                        {currentUser.childrenIds.map((childId) => {
+                          const child = users.find((u) => u.id === childId);
+                          return child ? (
+                            <p key={childId} className="text-sm">
+                              {child.name} ({child.grade} - {child.classroom})
+                            </p>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-2 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsAccountDialogOpen(false);
+                          onNavigate("settings");
+                        }}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        設定
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setIsAccountDialogOpen(false);
+                          onLogout();
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        ログアウト
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -226,6 +285,20 @@ export function Dashboard({
             </Card>
           )}
 
+          {canAccessScheduleList && (
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("schedule-list")}>
+              <CardHeader>
+                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
+                  <Calendar className="w-6 h-6 text-teal-600" />
+                </div>
+                <CardTitle>予定一覧</CardTitle>
+                <CardDescription>
+                  今後の活動スケジュール
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("notices")}>
             <CardHeader>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
@@ -237,6 +310,57 @@ export function Dashboard({
               </CardDescription>
             </CardHeader>
           </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("app-links")}>
+            <CardHeader>
+              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-4">
+                <LinkIcon className="w-6 h-6 text-cyan-600" />
+              </div>
+              <CardTitle>アプリリンク</CardTitle>
+              <CardDescription>
+                便利なリンク集
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("invention-notes")}>
+            <CardHeader>
+              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mb-4">
+                <FileText className="w-6 h-6 text-pink-600" />
+              </div>
+              <CardTitle>発明ノート</CardTitle>
+              <CardDescription>
+                アイデアを記録しよう
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Dialog open={isBGMOpen} onOpenChange={setIsBGMOpen}>
+            <DialogTrigger asChild>
+              <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="w-12 h-12 bg-purple-200 rounded-lg flex items-center justify-center mb-4">
+                    <Music className="w-6 h-6 text-purple-700" />
+                  </div>
+                  <CardTitle>BGMプレイヤー</CardTitle>
+                  <CardDescription>
+                    作業用BGMを再生
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>BGMプレイヤー</DialogTitle>
+                <DialogDescription>
+                  作業中に音楽を楽しみましょう
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <BGMPlayer />
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onNavigate("settings")}>
             <CardHeader>
@@ -262,7 +386,11 @@ export function Dashboard({
               {userNotices.length > 0 ? (
                 <div className="space-y-4">
                   {userNotices.map((notice) => (
-                    <div key={notice.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div 
+                      key={notice.id} 
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => onNavigate("notice-detail", notice.id)}
+                    >
                       <Bell className="w-5 h-5 text-yellow-600 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm truncate">{notice.title}</p>
@@ -286,7 +414,11 @@ export function Dashboard({
               {userMaterials.length > 0 ? (
                 <div className="space-y-4">
                   {userMaterials.slice(0, 3).map((material) => (
-                    <div key={material.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div 
+                      key={material.id} 
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => onNavigate("material-detail", material.id)}
+                    >
                       <BookOpen className="w-5 h-5 text-blue-600 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm truncate">{material.title}</p>
@@ -310,7 +442,11 @@ export function Dashboard({
               {upcomingShifts.length > 0 ? (
                 <div className="space-y-4">
                   {upcomingShifts.map((shift) => (
-                    <div key={shift.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div 
+                      key={shift.id} 
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => onNavigate("shift-detail", shift.id)}
+                    >
                       <Clock className="w-5 h-5 text-green-600 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm truncate">{shift.activity}</p>

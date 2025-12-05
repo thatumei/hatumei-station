@@ -14,7 +14,7 @@ interface NoticeManagerProps {
   currentUser: User;
   notices: Notice[];
   onUpdateNotices: (notices: Notice[]) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 export function NoticeManager({ 
@@ -261,7 +261,11 @@ export function NoticeManager({
         {/* Notices List */}
         <div className="space-y-4">
           {filteredNotices.map((notice) => (
-            <Card key={notice.id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={notice.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => onNavigate("notice-detail", notice.id)}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1">
@@ -288,7 +292,7 @@ export function NoticeManager({
                           {getPriorityLabel(notice.priority)}
                         </Badge>
                       </div>
-                      <CardDescription className="whitespace-pre-wrap">
+                      <CardDescription className="whitespace-pre-wrap line-clamp-3">
                         {notice.content}
                       </CardDescription>
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -304,7 +308,7 @@ export function NoticeManager({
                     </div>
                   </div>
                   {canEdit && (
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
                         size="sm"

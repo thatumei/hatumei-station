@@ -14,7 +14,7 @@ interface MaterialsManagerProps {
   currentUser: User;
   materials: Material[];
   onUpdateMaterials: (materials: Material[]) => void;
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, id?: string) => void;
 }
 
 export function MaterialsManager({ 
@@ -238,14 +238,18 @@ export function MaterialsManager({
         {/* Materials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMaterials.map((material) => (
-            <Card key={material.id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={material.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => onNavigate("material-detail", material.id)}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                     <BookOpen className="w-6 h-6 text-blue-600" />
                   </div>
                   {canEdit && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
                         size="sm"
